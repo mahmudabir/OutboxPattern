@@ -11,7 +11,7 @@ namespace OutboxPatternWithHangfire.EventBus
         }
         public async Task HandleAsync(OrderCreatedEvent @event)
         {
-            await Task.Delay(5000);
+            await Task.Delay(3000);
             _logger.LogInformation($"[Handler] OrderCreated: {@event.OrderId}, Customer: {@event.CustomerName}, Amount: {@event.TotalAmount}");
         }
     }
@@ -25,7 +25,7 @@ namespace OutboxPatternWithHangfire.EventBus
         }
         public async Task HandleAsync(OrderShippedEvent @event)
         {
-            await Task.Delay(5000);
+            await Task.Delay(3000);
             _logger.LogInformation($"[Handler] OrderShipped: {@event.OrderId}, Customer: {@event.CustomerName}, ShippedAt: {@event.ShippedAt}");
         }
     }
@@ -39,7 +39,7 @@ namespace OutboxPatternWithHangfire.EventBus
         }
         public async Task HandleAsync(MailSendEvent @event)
         {
-            await Task.Delay(5000);
+            await Task.Delay(3000);
             _logger.LogInformation($"[Handler] Sending mail to: {@event.To}, Subject: {@event.Subject}");
         }
     }
@@ -53,7 +53,7 @@ namespace OutboxPatternWithHangfire.EventBus
         }
         public async Task HandleAsync(InventoryUpdateEvent @event)
         {
-            await Task.Delay(5000);
+            await Task.Delay(3000);
             _logger.LogInformation($"[Handler] Inventory update for Order: {@event.OrderId}, Action: {@event.Action}");
         }
     }

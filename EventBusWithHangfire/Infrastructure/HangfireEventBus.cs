@@ -25,7 +25,7 @@ public class HangfireEventBus : IEventBus
     }
 }
 
-[AutomaticRetry(Attempts = 5, OnAttemptsExceeded = AttemptsExceededAction.Fail, DelaysInSeconds = new[] { 10, 30, 60, 120, 300 })]
+[AutomaticRetry(Attempts = 5, OnAttemptsExceeded = AttemptsExceededAction.Fail, DelaysInSeconds = new[] { 1, 5, 10, 20, 30 })]
 public class EventDispatchJob
 {
     private readonly IServiceProvider _serviceProvider;

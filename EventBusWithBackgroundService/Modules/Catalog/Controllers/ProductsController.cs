@@ -25,7 +25,7 @@ public sealed class ProductsController : ControllerBase
 
         // Persist product in DB here (omitted). Then publish domain event
         var productId = Guid.NewGuid();
-        await Task.Delay(1000);
+        await Task.Delay(3000);
         _logger.LogInformation("[Product] Created Product {ProductId}", productId);
         
         await _bus.PublishAsync(new ProductCreated(productId, request.Name), cancellationToken);
