@@ -15,7 +15,7 @@ namespace EventBusWithHangfire
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
 
-            // Hangfire configuration (Memory storage for demo; replace with persistent storage in production)
+            // Hangfire configuration: queues for events and maintenance, and dashboard authorization example
             builder.Services.AddHangfire(config =>
             {
                 config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -23,7 +23,13 @@ namespace EventBusWithHangfire
                       .UseRecommendedSerializerSettings()
                       .UseMemoryStorage();
             });
-            builder.Services.AddHangfireServer();
+
+            // Configure Hangfire server with multiple queues
+            builder.Services.AddHangfireServer(options =>
+            {
+                options.Queues = new[] { "default", "events", "maintenance" };
+                options.WorkerCount = Math.Max(Environment.ProcessorCount, 2);
+            });
 
             // Event Bus with Hangfire
             builder.Services.AddScoped<IEventBus, HangfireEventBus>();
@@ -43,8 +49,11 @@ namespace EventBusWithHangfire
 
             app.UseAuthorization();
 
-            // Hangfire Dashboard
+            // Hangfire Dashboard (unrestricted in dev). For production, plug in auth filter.
             app.UseHangfireDashboard("/hangfire");
+
+            // Register recurring jobs at startup
+            RecurringJobs.Register();
 
             app.MapControllers();
 
