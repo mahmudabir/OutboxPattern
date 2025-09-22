@@ -1,3 +1,6 @@
+using EventBusWithHangfire.Abstractions;
+using EventBusWithHangfire.Events;
+using EventBusWithHangfire.EventHandlers;
 using EventBusWithHangfire.Infrastructure;
 using Hangfire;
 using Hangfire.MemoryStorage;
@@ -34,6 +37,9 @@ namespace EventBusWithHangfire
             // Event Bus with Hangfire
             builder.Services.AddScoped<IEventBus, HangfireEventBus>();
             builder.Services.AddScoped<EventDispatchJob>();
+            // Register event handlers for DI
+            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreatedEvent>, SendEmailOnOrderCreatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreatedEvent>, UpdateReadModelOnOrderCreatedHandler>();
 
             var app = builder.Build();
 
