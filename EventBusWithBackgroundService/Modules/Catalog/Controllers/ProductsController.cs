@@ -21,8 +21,6 @@ public sealed class ProductsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
     {
-        Console.Clear();
-
         // Persist product in DB here (omitted). Then publish domain event
         var productId = Guid.NewGuid();
         await Task.Delay(3000);

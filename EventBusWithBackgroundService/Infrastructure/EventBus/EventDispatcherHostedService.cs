@@ -28,7 +28,6 @@ public sealed class EventDispatcherHostedService : BackgroundService
             {
                 using var scope = _serviceProvider.CreateScope();
                 var handlers = scope.ServiceProvider.GetServices<IEventHandler>();
-
                 foreach (var handler in handlers)
                 {
                     if (!handler.CanHandle(evt)) continue;
@@ -36,8 +35,6 @@ public sealed class EventDispatcherHostedService : BackgroundService
                     // Fire-and-forget with retries per handler
                     _ = ExecuteWithRetriesAsync(handler, evt, stoppingToken);
                 }
-
-                _logger.LogInformation("Event dispatch completed for event type {EventType}", evt.GetType().Name);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithHangfire", "Eve
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutboxPatternWithHangfire", "OutboxPatternWithHangfire\OutboxPatternWithHangfire.csproj", "{26DD1ABA-BD0B-4470-AA49-251C9C5461AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithRxNet", "EventBusWithRxNet\EventBusWithRxNet.csproj", "{ED3B0799-4616-4BAB-A639-3026C0B2166F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{26DD1ABA-BD0B-4470-AA49-251C9C5461AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26DD1ABA-BD0B-4470-AA49-251C9C5461AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26DD1ABA-BD0B-4470-AA49-251C9C5461AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED3B0799-4616-4BAB-A639-3026C0B2166F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED3B0799-4616-4BAB-A639-3026C0B2166F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED3B0799-4616-4BAB-A639-3026C0B2166F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED3B0799-4616-4BAB-A639-3026C0B2166F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

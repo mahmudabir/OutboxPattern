@@ -15,13 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(options);
 
         // Register all IEventHandler<T> implementations from application assemblies
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => a.FullName != null && a.FullName.StartsWith("EventBusWithBackgroundService", StringComparison.Ordinal));
-
-        foreach (var assembly in assemblies)
-        {
-            RegisterHandlersFromAssembly(services, assembly);
-        }
+        RegisterHandlersFromAssembly(services, Assembly.GetExecutingAssembly());
 
         return services;
     }

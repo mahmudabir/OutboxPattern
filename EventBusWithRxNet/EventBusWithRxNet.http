@@ -1,0 +1,6 @@
+@EventBusWithRxNet_HostAddress = http://localhost:5257
+
+GET {{EventBusWithRxNet_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
