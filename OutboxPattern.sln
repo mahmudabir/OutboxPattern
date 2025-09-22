@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutboxPattern", "OutboxPattern\OutboxPattern.csproj", "{0C765C0E-D40D-49DE-B70B-6E703C517D75}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithBackgroundService", "EventBusWithBackgroundService\EventBusWithBackgroundService.csproj", "{0C765C0E-D40D-49DE-B70B-6E703C517D75}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
