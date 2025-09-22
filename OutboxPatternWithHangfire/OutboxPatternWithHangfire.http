@@ -1,0 +1,6 @@
+@OutboxPatternWithHangfire_HostAddress = http://localhost:5102
+
+GET {{OutboxPatternWithHangfire_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
