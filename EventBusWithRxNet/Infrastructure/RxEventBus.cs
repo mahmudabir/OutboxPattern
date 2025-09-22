@@ -1,10 +1,5 @@
-using System;
-using System.Reactive.Subjects;
 using System.Reactive.Linq;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+using System.Reactive.Subjects;
 
 namespace EventBusWithRxNet.Infrastructure
 {
@@ -13,11 +8,13 @@ namespace EventBusWithRxNet.Infrastructure
         private readonly ISubject<object> _subject = new Subject<object>();
         private readonly IServiceProvider _serviceProvider;
         private readonly EventBusOptions _options;
+        private readonly ILogger<RxEventBus> _logger;
 
-        public RxEventBus(IServiceProvider serviceProvider, EventBusOptions options)
+        public RxEventBus(IServiceProvider serviceProvider, EventBusOptions options, ILogger<RxEventBus> logger)
         {
             _serviceProvider = serviceProvider;
             _options = options;
+            _logger = logger;
         }
 
         public void Publish<TEvent>(TEvent @event)
@@ -49,32 +46,66 @@ namespace EventBusWithRxNet.Infrastructure
             {
                 using var scope = _serviceProvider.CreateScope();
                 var handlers = scope.ServiceProvider.GetServices<IEventHandler<TEvent>>();
+
                 foreach (var handler in handlers)
                 {
-                    int attempt = 0;
-                    Exception lastException = null;
-                    do
-                    {
-                        try
-                        {
-                            await handler.HandleAsync(evt, cancellationToken);
-                            lastException = null;
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            lastException = ex.InnerException ?? ex;
-                            attempt++;
-                            if (attempt < _options.RetryCount)
-                                await Task.Delay(_options.RetryDelayMilliseconds, cancellationToken);
-                        }
-                    } while (attempt < _options.RetryCount && !cancellationToken.IsCancellationRequested);
-                    if (lastException != null)
-                    {
-                        Console.WriteLine($"[EventBus] Handler failed after {_options.RetryCount} attempts: {lastException.Message}");
-                    }
+                    // Fire-and-forget with retries per handler
+                    _ = ExecuteWithRetriesAsync(handler, evt, cancellationToken);
                 }
             });
+        }
+
+        private async Task ExecuteWithRetriesAsync<TEvent>(IEventHandler<TEvent> handler, TEvent evt, CancellationToken ct)
+        {
+            var attempt = 0;
+            var maxRetries = Math.Max(0, _options.HandlerMaxRetries);
+
+            while (true)
+            {
+                try
+                {
+                    await handler.HandleAsync(evt, ct);
+                    return; // success
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    // Shutdown
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    if (attempt >= maxRetries)
+                    {
+                        _logger.LogError(ex, "Handler {Handler} failed for event {EventType} after {Attempts} attempts", handler.GetType().Name, evt.GetType().Name, attempt + 1);
+                        return;
+                    }
+
+                    var delay = ComputeDelay(attempt, _options);
+                    _logger.LogWarning(ex, "Handler {Handler} failed for event {EventType}. Retrying in {Delay} (attempt {Attempt}/{Total})", handler.GetType().Name, evt.GetType().Name, delay, attempt + 1, maxRetries + 1);
+                    try
+                    {
+                        await Task.Delay(delay, ct);
+                    }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    attempt++;
+                }
+            }
+        }
+
+        private static TimeSpan ComputeDelay(int attempt, EventBusOptions options)
+        {
+            // exponential backoff: base * 2^attempt
+            var baseMs = options.HandlerBaseDelay.TotalMilliseconds;
+            var maxMs = options.HandlerMaxDelay.TotalMilliseconds;
+            var exp = Math.Min(baseMs * Math.Pow(2, attempt), maxMs);
+
+            // jitter +/- JitterFactor
+            var jitter = 1.0 + ((Random.Shared.NextDouble() * 2 - 1) * options.JitterFactor);
+            var ms = Math.Max(0, exp * jitter);
+            return TimeSpan.FromMilliseconds(ms);
         }
 
         private class CompositeDisposable : IDisposable

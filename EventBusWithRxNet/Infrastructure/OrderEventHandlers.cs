@@ -1,34 +1,40 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using EventBusWithRxNet.Events;
 
 namespace EventBusWithRxNet.Infrastructure
 {
-    public class OrderPlacedHandler : IEventHandler<OrderPlacedEvent>
+    public class OrderPlacedHandler(ILogger<OrderPlacedHandler> logger) : IEventHandler<OrderPlacedEvent>
     {
-        public Task HandleAsync(OrderPlacedEvent @event, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(OrderPlacedEvent @event, CancellationToken cancellationToken = default)
         {
-            Console.WriteLine($"[Handler] OrderPlacedEvent: OrderId={@event.OrderId}, UserId={@event.UserId}");
-            return Task.CompletedTask;
+            await Task.Delay(3000);
+            logger.LogInformation($"[Handler] OrderPlacedEvent: OrderId={@event.OrderId}, UserId={@event.UserId}");
         }
     }
 
-    public class EmailAfterOrderPlacedHandler : IEventHandler<OrderPlacedEvent>
+    public class EmailAfterOrderPlacedHandler(ILogger<EmailAfterOrderPlacedHandler> logger) : IEventHandler<OrderPlacedEvent>
     {
-        public Task HandleAsync(OrderPlacedEvent @event, CancellationToken cancellationToken = default)
+        private bool IsFailed = true;
+
+        public async Task HandleAsync(OrderPlacedEvent @event, CancellationToken cancellationToken = default)
         {
-            Console.WriteLine($"[Handler] EmailAfterOrderPlacedHandler: OrderId={@event.OrderId}, UserId={@event.UserId}");
-            return Task.CompletedTask;
+            await Task.Delay(3000);
+
+            // Mocking a failure
+            if (!IsFailed)
+            {
+                IsFailed = true;
+                throw new Exception("Failed to send email");
+            }
+            logger.LogInformation($"[Handler] EmailAfterOrderPlacedHandler: OrderId={@event.OrderId}, UserId={@event.UserId}");
         }
     }
 
-    public class OrderPaidHandler : IEventHandler<OrderPaidEvent>
+    public class OrderPaidHandler(ILogger<OrderPaidHandler> logger) : IEventHandler<OrderPaidEvent>
     {
-        public Task HandleAsync(OrderPaidEvent @event, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(OrderPaidEvent @event, CancellationToken cancellationToken = default)
         {
-            Console.WriteLine($"[Handler] OrderPaidEvent: OrderId={@event.OrderId}, PaidAmount={@event.PaidAmount}");
-            return Task.CompletedTask;
+            await Task.Delay(3000);
+            logger.LogInformation($"[Handler] OrderPaidEvent: OrderId={@event.OrderId}, PaidAmount={@event.PaidAmount}");
         }
     }
 }

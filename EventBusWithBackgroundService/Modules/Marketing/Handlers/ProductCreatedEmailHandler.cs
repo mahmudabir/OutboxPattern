@@ -5,7 +5,7 @@ namespace OutboxPattern.Modules.Marketing.Handlers;
 
 public sealed class ProductCreatedEmailHandler(ILogger<ProductCreatedEmailHandler> logger) : IEventHandler<ProductCreated>
 {
-    private bool IsFailed = false;
+    private bool IsFailed = true;
 
     public async Task HandleAsync(ProductCreated @event, CancellationToken cancellationToken = default)
     {

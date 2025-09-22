@@ -9,9 +9,11 @@ namespace EventBusWithRxNet.Infrastructure
         public static IServiceCollection AddRxEventBus(this IServiceCollection services, Action<EventBusOptions> configureOptions = null)
         {
             var options = new EventBusOptions();
-            configureOptions?.Invoke(options);
+            if (configureOptions is not null) configureOptions(options);
+
             services.AddSingleton(options);
-            services.AddSingleton<IEventBus, RxEventBus>(sp => new RxEventBus(sp, sp.GetRequiredService<EventBusOptions>()));
+            services.AddSingleton<RxEventBus>();
+            services.AddSingleton<IEventBus, RxEventBus>(sp => sp.GetRequiredService<RxEventBus>());
             return services;
         }
         public static IServiceCollection AddEventHandlers(this IServiceCollection services)

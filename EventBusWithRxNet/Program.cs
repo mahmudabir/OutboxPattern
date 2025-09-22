@@ -14,11 +14,7 @@ namespace EventBusWithRxNet
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddRxEventBus(options =>
-            {
-                options.RetryCount = 3; // or any value you want
-                options.RetryDelayMilliseconds = 500;
-            });
+            builder.Services.AddRxEventBus();
             builder.Services.AddEventHandlers();
             builder.Services.AddHostedService<OrderEventsHostedService>();
 
