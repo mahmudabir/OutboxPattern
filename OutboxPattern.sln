@@ -1,6 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36429.23 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithBackgroundService", "EventBusWithBackgroundService\EventBusWithBackgroundService.csproj", "{0C765C0E-D40D-49DE-B70B-6E703C517D75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithHangfire", "EventBusWithHangfire\EventBusWithHangfire.csproj", "{FF9BEFCE-748E-4428-A0AD-803DD19AB829}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +17,15 @@ Global
 		{0C765C0E-D40D-49DE-B70B-6E703C517D75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C765C0E-D40D-49DE-B70B-6E703C517D75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C765C0E-D40D-49DE-B70B-6E703C517D75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF9BEFCE-748E-4428-A0AD-803DD19AB829}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF9BEFCE-748E-4428-A0AD-803DD19AB829}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF9BEFCE-748E-4428-A0AD-803DD19AB829}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF9BEFCE-748E-4428-A0AD-803DD19AB829}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {671068AC-837B-411F-884F-7FF088C9EC73}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,6 @@
+@EventBusWithHangfire_HostAddress = http://localhost:5286
+
+GET {{EventBusWithHangfire_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
