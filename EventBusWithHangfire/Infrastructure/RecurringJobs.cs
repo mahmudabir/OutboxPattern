@@ -20,7 +20,6 @@ public static class RecurringJobs
         // Example: schedule cleanup in low priority queue
         RecurringJob.AddOrUpdate("cleanup-old-jobs",
             () => Console.WriteLine("Cleanup older data/jobs"),
-            Cron.Hourly,
-            new RecurringJobOptions { QueueName = "maintenance" });
+            Cron.Hourly);
     }
 }

@@ -34,8 +34,8 @@ namespace EventBusWithRxNet.Infrastructure
             // For each event type, subscribe and dispatch to handlers
             // This requires knowing all event types at startup
             // We'll subscribe for each known event type
-            disposables.Add(SubscribeHandlersForEventType<EventBusWithRxNet.Events.OrderPlacedEvent>(cancellationToken));
-            disposables.Add(SubscribeHandlersForEventType<EventBusWithRxNet.Events.OrderPaidEvent>(cancellationToken));
+            disposables.Add(SubscribeHandlersForEventType<Events.OrderPlacedEvent>(cancellationToken));
+            disposables.Add(SubscribeHandlersForEventType<Events.OrderPaidEvent>(cancellationToken));
             // Add more event types here as needed
             return new CompositeDisposable(disposables);
         }

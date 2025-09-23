@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventBusWithHangfire.Controllers;
 
 [ApiController]
-[Route("api/jobs")] 
-public class JobsController : ControllerBase
+[Route("api/jobs")]
+public class JobsController(ILogger<JobsController> logger) : ControllerBase
 {
     [HttpPost("enqueue")]
     public IActionResult Enqueue([FromBody] string message)
@@ -22,21 +22,21 @@ public class JobsController : ControllerBase
         return Ok(new { jobId });
     }
 
-    [HttpPost("retry")] 
+    [HttpPost("retry")]
     public IActionResult Retry()
     {
         var jobId = BackgroundJob.Enqueue(() => JobSamples.RetryableSample());
         return Ok(new { jobId });
     }
 
-    [HttpPost("recurring")] 
+    [HttpPost("recurring")]
     public IActionResult AddRecurring([FromBody] string cron)
     {
-        RecurringJob.AddOrUpdate("custom-recurring", () => Console.WriteLine($"Custom recurring at {DateTime.UtcNow:O}"), cron);
+        RecurringJob.AddOrUpdate("custom-recurring", () => logger.LogInformation($"Custom recurring at {DateTime.UtcNow:O}"), cron);
         return Ok(new { status = "Recurring job set", cron });
     }
 
-    [HttpDelete("recurring")] 
+    [HttpDelete("recurring")]
     public IActionResult RemoveRecurring()
     {
         RecurringJob.RemoveIfExists("custom-recurring");
