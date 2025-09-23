@@ -53,10 +53,14 @@ namespace EventBusWithHangfire
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
-            // Hangfire Dashboard (unrestricted in dev). For production, plug in auth filter.
-            app.UseHangfireDashboard("/hangfire");
+            // Hangfire Dashboard with custom authorization filter
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = [new HangfireDashboardAuthorizationFilter()],
+            });
 
             // Register recurring jobs at startup
             RecurringJobs.Register();
