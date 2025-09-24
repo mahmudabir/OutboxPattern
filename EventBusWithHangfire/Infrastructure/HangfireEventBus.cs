@@ -1,4 +1,3 @@
-using System.Text.Json;
 using EventBusWithHangfire.Abstractions;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,19 +7,24 @@ namespace EventBusWithHangfire.Infrastructure;
 public class HangfireEventBus : IEventBus
 {
     private readonly IBackgroundJobClient _backgroundJobClient;
+    private readonly ILogger<HangfireEventBus> _logger;
 
-    public HangfireEventBus(IBackgroundJobClient backgroundJobClient)
+    public HangfireEventBus(IBackgroundJobClient backgroundJobClient, ILogger<HangfireEventBus> logger)
     {
         _backgroundJobClient = backgroundJobClient;
+        _logger = logger;
     }
 
     public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default)
         where TEvent : class, IIntegrationEvent
     {
-        // Fire-and-forget enqueue via Hangfire (events queue)
-        _backgroundJobClient.Create(
-            Hangfire.Common.Job.FromExpression<EventDispatchJob>(job => job.DispatchAsync(@event, JobCancellationToken.Null)),
-            new Hangfire.States.EnqueuedState("events"));
+        var publishedAt = DateTime.UtcNow;
+        var publishedTicks = publishedAt.Ticks;
+        _logger.LogInformation("[EventBus] Publishing {EventType} at {PublishedAt:o} ({Ticks})", typeof(TEvent).Name, publishedAt, publishedTicks);
+
+        // ONLY enqueue once (duplicate Create+Enqueue previously caused extra overhead)
+        var jobId = _backgroundJobClient.Enqueue<EventDispatchJob>(job => job.DispatchAsync(@event, publishedAt, JobCancellationToken.Null));
+        _logger.LogDebug("[EventBus] Job {JobId} enqueued for {EventType}", jobId, typeof(TEvent).Name);
         return Task.CompletedTask;
     }
 }
@@ -37,18 +41,21 @@ public class EventDispatchJob
         _logger = logger;
     }
 
-    // Hangfire serializes args; keep events as simple POCOs/records
-    [Queue("events")]
-    public async Task DispatchAsync<TEvent>(TEvent @event, IJobCancellationToken cancellationToken)
+    [Queue("events")] // ensure server options list this queue and preferably first for priority
+    public async Task DispatchAsync<TEvent>(TEvent @event, DateTime publishedAt, IJobCancellationToken cancellationToken)
         where TEvent : class, IIntegrationEvent
     {
+        var startedAt = DateTime.UtcNow;
+        var delay = (startedAt - publishedAt).TotalMilliseconds;
+        _logger.LogInformation("[EventDispatchJob] Start {EventType} at {StartedAt:o}, published {PublishedAt:o}, delay {DelayMs}ms", typeof(TEvent).Name, startedAt, publishedAt, delay);
+
         cancellationToken.ThrowIfCancellationRequested();
         using var scope = _serviceProvider.CreateScope();
         var handlers = scope.ServiceProvider.GetServices<IIntegrationEventHandler<TEvent>>().ToArray();
 
         if (handlers.Length == 0)
         {
-            _logger.LogWarning("No handlers registered for event type {EventType}", typeof(TEvent).Name);
+            _logger.LogWarning("[EventDispatchJob] No handlers for {EventType}", typeof(TEvent).Name);
             return;
         }
 
@@ -58,27 +65,26 @@ public class EventDispatchJob
         {
             try
             {
-                _logger.LogInformation("Dispatching {EventType} to handler {Handler}", typeof(TEvent).Name, handler.GetType().Name);
-                await handler.HandleAsync(@event, default);
+                _logger.LogDebug("[EventDispatchJob] Invoking handler {Handler} for {EventType}", handler.GetType().Name, typeof(TEvent).Name);
+                await handler.HandleAsync(@event, default); // pass default token
             }
             catch (OperationCanceledException)
             {
-                _logger.LogWarning("Dispatch canceled for handler {Handler}", handler.GetType().Name);
-                throw; // surface cancellation to Hangfire
+                _logger.LogWarning("[EventDispatchJob] Canceled handler {Handler}", handler.GetType().Name);
+                throw; // propagate cancellation
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Handler {Handler} failed for {EventType}", handler.GetType().Name, typeof(TEvent).Name);
+                _logger.LogError(ex, "[EventDispatchJob] Handler {Handler} failed for {EventType}", handler.GetType().Name, typeof(TEvent).Name);
                 exceptions.Add(ex);
             }
         }
 
         if (exceptions.Count > 0)
         {
-            // Aggregate exceptions to trigger Hangfire retry
-            throw new AggregateException(exceptions);
+            throw new AggregateException(exceptions); // trigger retry
         }
 
-        _logger.LogInformation("Successfully dispatched {EventType} to {Count} handlers", typeof(TEvent).Name, handlers.Length);
+        _logger.LogInformation("[EventDispatchJob] Completed {EventType} ({HandlerCount} handlers) total delay {DelayMs}ms", typeof(TEvent).Name, handlers.Length, delay);
     }
 }

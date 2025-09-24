@@ -3,7 +3,7 @@ using EventBusWithHangfire.Events;
 using EventBusWithHangfire.EventHandlers;
 using EventBusWithHangfire.Infrastructure;
 using Hangfire;
-using Hangfire.MemoryStorage;
+using Hangfire.SqlServer;
 
 namespace EventBusWithHangfire
 {
@@ -13,32 +13,49 @@ namespace EventBusWithHangfire
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
 
-            // Hangfire configuration: queues for events and maintenance, and dashboard authorization example
+            // Connection string for LocalDB (remove stray '>')
+            var hangfireConnection = builder.Configuration.GetConnectionString("Hangfire");
+
+            // Hangfire with SQL Server storage (no MemoryStorage in production path)
             builder.Services.AddHangfire(config =>
             {
                 config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                       .UseSimpleAssemblyNameTypeSerializer()
                       .UseRecommendedSerializerSettings()
-                      .UseMemoryStorage();
+                      .UseSqlServerStorage(hangfireConnection, new SqlServerStorageOptions
+                      {
+                          //PrepareSchemaIfNecessary = true,
+                          //QueuePollInterval = TimeSpan.Zero, // immediate fetch
+                          //SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                          //CommandBatchMaxTimeout = TimeSpan.FromMinutes(1),
+                          //UseRecommendedIsolationLevel = true,
+                          //DisableGlobalLocks = true
+                      });
             });
 
-            // Configure Hangfire server with multiple queues
+            // Hangfire server tuned for low latency on 'events'
             builder.Services.AddHangfireServer(options =>
             {
-                options.Queues = ["default", "events", "maintenance"];
-                options.SchedulePollingInterval = TimeSpan.FromSeconds(1);
-                options.WorkerCount = 8;//Math.Max(Environment.ProcessorCount, 2);
+                options.Queues = new[] { "default", "events", "maintenance" };
+                options.WorkerCount = Math.Max(Environment.ProcessorCount, 2);
+                //options.SchedulePollingInterval = TimeSpan.FromSeconds(1);
+                //options.HeartbeatInterval = TimeSpan.FromSeconds(10);
+                //options.ServerCheckInterval = TimeSpan.FromSeconds(2);
             });
 
-            // Event Bus with Hangfire
+            //// Boost minimum threads to reduce cold start waits
+            //ThreadPool.GetMinThreads(out var workerMin, out var ioMin);
+            //if (workerMin < 50)
+            //{
+            //    ThreadPool.SetMinThreads(50, ioMin);
+            //}
+
             builder.Services.AddScoped<IEventBus, HangfireEventBus>();
             builder.Services.AddScoped<EventDispatchJob>();
-            // Register event handlers for DI
             builder.Services.AddScoped<IIntegrationEventHandler<OrderCreatedEvent>, SendEmailOnOrderCreatedHandler>();
             builder.Services.AddScoped<IIntegrationEventHandler<OrderCreatedEvent>, UpdateReadModelOnOrderCreatedHandler>();
 
@@ -53,21 +70,19 @@ namespace EventBusWithHangfire
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // Hangfire Dashboard with custom authorization filter
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
                 Authorization = [new HangfireDashboardAuthorizationFilter()],
             });
 
-            // Register recurring jobs at startup
+            // Warm-up job to ensure workers spin up & DB schema created
+            //BackgroundJob.Enqueue(() => Console.WriteLine($"Warm-up job at {DateTime.UtcNow:O}"));
+
             RecurringJobs.Register();
-
             app.MapControllers();
-
             app.Run();
         }
     }
