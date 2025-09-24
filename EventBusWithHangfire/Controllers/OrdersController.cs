@@ -19,6 +19,7 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
     {
+        Console.Clear();
         // Simulate order creation
         var orderId = Guid.NewGuid();
         var total = request.Total;

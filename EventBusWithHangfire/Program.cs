@@ -30,8 +30,9 @@ namespace EventBusWithHangfire
             // Configure Hangfire server with multiple queues
             builder.Services.AddHangfireServer(options =>
             {
-                options.Queues = new[] { "default", "events", "maintenance" };
-                options.WorkerCount = Math.Max(Environment.ProcessorCount, 2);
+                options.Queues = ["default", "events", "maintenance"];
+                options.SchedulePollingInterval = TimeSpan.FromSeconds(1);
+                options.WorkerCount = 8;//Math.Max(Environment.ProcessorCount, 2);
             });
 
             // Event Bus with Hangfire
