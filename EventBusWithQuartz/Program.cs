@@ -1,8 +1,12 @@
 using EventBusWithQuartz.Abstractions;
-using EventBusWithQuartz.Events;
+using EventBusWithQuartz.DataAccess;
 using EventBusWithQuartz.EventHandlers;
+using EventBusWithQuartz.Events;
 using EventBusWithQuartz.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
+using Quartz.Impl.AdoJobStore;
+using System.Configuration;
 
 namespace EventBusWithQuartz
 {
@@ -16,12 +20,28 @@ namespace EventBusWithQuartz
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
 
-            // Quartz configuration
+            var quartzConnection = builder.Configuration.GetConnectionString("Quartz");
+
             builder.Services.AddQuartz(q =>
             {
-                //q.UseMicrosoftDependencyInjectionJobFactory();
+                // MicrosoftDependencyInjectionJobFactory is default (no need to call obsolete method)
                 q.UseSimpleTypeLoader();
-                q.UseInMemoryStore(); // For demo; replace with persistent store in production
+                q.UsePersistentStore(c =>
+                {
+                    c.RetryInterval = TimeSpan.FromMinutes(1);
+                    c.UseProperties = true;
+                    c.PerformSchemaValidation = false;
+                    c.UseSystemTextJsonSerializer();
+
+                    c.UseSqlServer(store =>
+                    {
+                        store.ConnectionString = quartzConnection!;
+                        // Include schema in table prefix so Quartz queries quartz.QRTZ_* tables
+                        store.TablePrefix = "quartz.QRTZ_"; 
+                        store.UseDriverDelegate<SqlServerDelegate>();
+                    });
+                });
+
                 q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Math.Max(Environment.ProcessorCount, 4));
             });
             builder.Services.AddQuartzHostedService(options =>
@@ -29,6 +49,8 @@ namespace EventBusWithQuartz
                 options.WaitForJobsToComplete = true;
                 options.AwaitApplicationStarted = true;
             });
+
+            builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(quartzConnection));
 
             builder.Services.AddScoped<IEventBus, QuartzEventBus>();
             builder.Services.AddScoped<IIntegrationEventHandler<OrderCreatedEvent>, SendEmailOnOrderCreatedHandler>();
@@ -48,7 +70,6 @@ namespace EventBusWithQuartz
 
             app.MapControllers();
 
-            // Register recurring jobs after scheduler is started
             using (var scope = app.Services.CreateScope())
             {
                 var schedulerFactory = scope.ServiceProvider.GetRequiredService<ISchedulerFactory>();

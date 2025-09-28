@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Globalization;
 using EventBusWithQuartz.Abstractions;
 using Quartz;
 
@@ -56,7 +57,8 @@ public class QuartzEventBus : IEventBus
                 [EventDispatchJob<TEvent>.PayloadKey] = payload,
                 [EventDispatchJob<TEvent>.HandlerKey] = handlerKey,
                 [EventDispatchJob<TEvent>.PublishedAtKey] = publishedAt.ToString("O"),
-                [EventDispatchJob<TEvent>.RetryCountKey] = 0
+                // Store retry as string because UseProperties=true requires string values
+                [EventDispatchJob<TEvent>.RetryCountKey] = 0.ToString(CultureInfo.InvariantCulture)
             };
 
             var job = JobBuilder.Create<EventDispatchJob<TEvent>>()
@@ -101,7 +103,7 @@ public class EventDispatchJob<TEvent> : IJob where TEvent : class, IIntegrationE
         var payload = data.GetString(PayloadKey)!;
         var handlerKey = data.GetString(HandlerKey)!;
         var publishedAtString = data.GetString(PublishedAtKey)!;
-        var retry = data.GetInt(RetryCountKey);
+        var retry = data.GetInt(RetryCountKey); // works even if stored as string
 
         var publishedAt = DateTime.Parse(publishedAtString, null, System.Globalization.DateTimeStyles.RoundtripKind);
         var startedAt = DateTime.UtcNow;
@@ -167,7 +169,7 @@ public class EventDispatchJob<TEvent> : IJob where TEvent : class, IIntegrationE
             [PayloadKey] = payload,
             [HandlerKey] = handlerKey,
             [PublishedAtKey] = publishedAt,
-            [RetryCountKey] = nextRetry
+            [RetryCountKey] = nextRetry.ToString(CultureInfo.InvariantCulture)
         };
 
         var job = JobBuilder.Create<EventDispatchJob<TEvent>>()
