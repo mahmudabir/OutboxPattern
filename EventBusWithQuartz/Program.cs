@@ -52,7 +52,8 @@ namespace EventBusWithQuartz
                     });
                 });
 
-                q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Math.Max(Environment.ProcessorCount, 4));
+                //q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Math.Max(Environment.ProcessorCount, 4));
+                q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Convert.ToInt32(builder.Configuration["Quartz:MaxConcurrency"] ?? "100"));
             });
             builder.Services.AddQuartzHostedService(options =>
             {
