@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutboxPatternWithHangfire",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithRxNet", "EventBusWithRxNet\EventBusWithRxNet.csproj", "{ED3B0799-4616-4BAB-A639-3026C0B2166F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithQuartz", "EventBusWithQuartz\EventBusWithQuartz.csproj", "{A9D48453-CAA9-4D36-810F-F791345E97F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{ED3B0799-4616-4BAB-A639-3026C0B2166F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED3B0799-4616-4BAB-A639-3026C0B2166F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED3B0799-4616-4BAB-A639-3026C0B2166F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9D48453-CAA9-4D36-810F-F791345E97F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9D48453-CAA9-4D36-810F-F791345E97F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9D48453-CAA9-4D36-810F-F791345E97F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9D48453-CAA9-4D36-810F-F791345E97F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
