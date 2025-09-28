@@ -6,7 +6,6 @@ using EventBusWithQuartz.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Quartz.Impl.AdoJobStore;
-using System.Configuration;
 
 namespace EventBusWithQuartz
 {
@@ -19,6 +18,17 @@ namespace EventBusWithQuartz
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
+
+            // Add CORS for development
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
 
             var quartzConnection = builder.Configuration.GetConnectionString("Quartz");
 
@@ -50,6 +60,9 @@ namespace EventBusWithQuartz
                 options.AwaitApplicationStarted = true;
             });
 
+            // Add basic health checks
+            builder.Services.AddHealthChecks();
+
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(quartzConnection));
 
             builder.Services.AddScoped<IEventBus, QuartzEventBus>();
@@ -66,9 +79,23 @@ namespace EventBusWithQuartz
             }
 
             app.UseHttpsRedirection();
+            
+            // Enable CORS
+            app.UseCors();
+            
+            // Enable static files to serve the dashboard
+            app.UseStaticFiles();
+            
             app.UseAuthorization();
 
             app.MapControllers();
+            
+            // Add health check endpoint
+            app.MapHealthChecks("/health");
+
+            // Add a simple redirect to the dashboard
+            app.MapGet("/", () => Results.Redirect("/dashboard.html"));
+            app.MapGet("/dashboard", () => Results.Redirect("/dashboard.html"));
 
             using (var scope = app.Services.CreateScope())
             {
