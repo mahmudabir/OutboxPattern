@@ -99,7 +99,7 @@ public class EventDispatchJob<TEvent> : IJob where TEvent : class, IIntegrationE
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Task.Delay(1000);
+        await Task.Delay(5000);
         var data = context.MergedJobDataMap;
         var payload = data.GetString(PayloadKey)!;
         var handlerKey = data.GetString(HandlerKey)!;
