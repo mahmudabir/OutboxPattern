@@ -154,6 +154,8 @@ public class EventDispatchJob<TEvent> : IJob where TEvent : class, IIntegrationE
             _logger.LogError(ex, "[EventDispatchJob] Handler {HandlerKey} failed for {EventType} (retry {Retry})", handlerKey, typeof(TEvent).Name, retry);
             await ScheduleRetryAsync(context, payload, handlerKey, publishedAtString, retry);
         }
+
+        _logger.LogInformation("[EventDispatchJob] End handler dispatch {EventType} -> key {HandlerKey} at {StartedAt:o} (delay {Delay}ms, retry {Retry})", typeof(TEvent).Name, handlerKey, DateTime.UtcNow, delayMs, retry);
     }
 
     private async Task ScheduleRetryAsync(IJobExecutionContext ctx, string payload, string handlerKey, string publishedAt, int currentRetry)

@@ -66,7 +66,11 @@ namespace EventBusWithHangfire
             {
                 app.MapOpenApi();
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(c =>
+                {
+                    c.EnableTryItOutByDefault();
+                    c.DisplayRequestDuration();
+                });
             }
 
             app.UseHttpsRedirection();
