@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithQuartz", "Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutboxPatternWithQuartz", "OutboxPatternWithQuartz\OutboxPatternWithQuartz.csproj", "{B974144C-77A2-4B73-A89A-3FFB6C449831}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBusWithTickerQ", "EventBusWithTickerQ\EventBusWithTickerQ.csproj", "{E8487D4D-F82B-41FB-A3C4-63183626737C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{B974144C-77A2-4B73-A89A-3FFB6C449831}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B974144C-77A2-4B73-A89A-3FFB6C449831}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B974144C-77A2-4B73-A89A-3FFB6C449831}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8487D4D-F82B-41FB-A3C4-63183626737C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8487D4D-F82B-41FB-A3C4-63183626737C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8487D4D-F82B-41FB-A3C4-63183626737C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8487D4D-F82B-41FB-A3C4-63183626737C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

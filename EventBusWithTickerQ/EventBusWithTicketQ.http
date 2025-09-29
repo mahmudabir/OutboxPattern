@@ -1,0 +1,6 @@
+@EventBusWithTicketQ_HostAddress = http://localhost:5071
+
+GET {{EventBusWithTicketQ_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
