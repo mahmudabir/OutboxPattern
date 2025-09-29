@@ -21,7 +21,7 @@ public class JobsController(ILogger<JobsController> logger, ITimeTickerManager<T
         await timeTickerManager.AddAsync(new TimeTicker
         {
             Request = TickerHelper.CreateTickerRequest<string>(message),
-            ExecutionTime = DateTime.Now.AddSeconds(1),
+            ExecutionTime = DateTime.Now.AddSeconds(2),
             Function = "ExampleTicker",
             Description = $"Short Description",
             Retries = 3,

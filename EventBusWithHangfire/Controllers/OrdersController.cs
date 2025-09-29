@@ -21,7 +21,7 @@ public class OrdersController : ControllerBase
     {
         Console.Clear();
         // Simulate order creation
-        var orderId = Guid.NewGuid();
+        var orderId = Guid.CreateVersion7();
         var total = request.Total;
 
         // Fire-and-forget publish using Hangfire

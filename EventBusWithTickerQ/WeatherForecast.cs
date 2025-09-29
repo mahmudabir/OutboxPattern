@@ -1,4 +1,4 @@
-namespace EventBusWithTicketQ
+namespace EventBusWithTickerQ
 {
     public class WeatherForecast
     {

@@ -12,7 +12,7 @@ public class JobsController(ISchedulerFactory schedulerFactory, ILogger<JobsCont
     public async Task<IActionResult> Enqueue([FromBody] string message)
     {
         var scheduler = await schedulerFactory.GetScheduler();
-        var id = $"enqueue-{Guid.NewGuid():N}";
+        var id = $"enqueue-{Guid.CreateVersion7():N}";
         var job = JobBuilder.Create<DelegateInvocationJob>()
             .WithIdentity(id, "adhoc")
             .UsingJobData(DelegateInvocationJob.MethodNameKey, nameof(JobSamples.EnqueueSample))
@@ -27,7 +27,7 @@ public class JobsController(ISchedulerFactory schedulerFactory, ILogger<JobsCont
     public async Task<IActionResult> Delay([FromBody] string message)
     {
         var scheduler = await schedulerFactory.GetScheduler();
-        var id = $"delay-{Guid.NewGuid():N}";
+        var id = $"delay-{Guid.CreateVersion7():N}";
         var job = JobBuilder.Create<DelegateInvocationJob>()
             .WithIdentity(id, "adhoc")
             .UsingJobData(DelegateInvocationJob.MethodNameKey, nameof(JobSamples.DelayedSample))
@@ -42,7 +42,7 @@ public class JobsController(ISchedulerFactory schedulerFactory, ILogger<JobsCont
     public async Task<IActionResult> Retry()
     {
         var scheduler = await schedulerFactory.GetScheduler();
-        var id = $"retry-{Guid.NewGuid():N}";
+        var id = $"retry-{Guid.CreateVersion7():N}";
         var job = JobBuilder.Create<DelegateInvocationJob>()
             .WithIdentity(id, "adhoc")
             .UsingJobData(DelegateInvocationJob.MethodNameKey, nameof(JobSamples.RetryableSample))

@@ -9,7 +9,13 @@ namespace EventBusWithTickerQ.Services
         [TickerFunction("ExampleTicker")]
         public async Task ExampleTicker(TickerFunctionContext<string> tickerContext, CancellationToken cancellationToken)
         {
-            logger.LogWarning(tickerContext.Request); // Output Hello
+            logger.LogWarning(tickerContext.Request); // Output data
+        }
+
+        [TickerFunction("ExampleTickerComplexType")]
+        public async Task ExampleTickerComplexType(TickerFunctionContext<WeatherForecast> tickerContext, CancellationToken cancellationToken)
+        {
+            logger.LogWarning(tickerContext.Request.Summary); // Output data
         }
     }
 }

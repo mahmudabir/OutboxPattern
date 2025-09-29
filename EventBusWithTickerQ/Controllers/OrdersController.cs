@@ -7,23 +7,41 @@ namespace EventBusWithTickerQ.Controllers;
 
 [ApiController]
 [Route("api/orders")]
-public class OrdersController : ControllerBase
+public class OrdersController(IEventBus eventBus) : ControllerBase
 {
-    private readonly IEventBus _eventBus;
-
-    public OrdersController(IEventBus eventBus)
-    {
-        _eventBus = eventBus;
-    }
-
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
     {
         Console.Clear();
-        var orderId = Guid.NewGuid();
+        var orderId = Guid.CreateVersion7();
         var total = request.Total;
-        await _eventBus.PublishAsync(new OrderCreatedEvent(orderId, total));
+        await eventBus.PublishAsync(new OrderCreateEvent(orderId, total));
         return Accepted(new { orderId, total });
+    }
+
+    [HttpPut]
+    public async Task<IActionResult> UpdateOrder([FromBody] CreateOrderRequest request)
+    {
+        Console.Clear();
+        var orderId = Guid.CreateVersion7();
+        var total = request.Total;
+        await eventBus.PublishAsync(new OrderUpdateEvent(orderId, total));
+        return Accepted(new { orderId, total });
+    }
+
+    [HttpPost("{times:long}")]
+    public async Task<IActionResult> CreateOrder([FromRoute] long times, [FromBody] CreateOrderRequest request)
+    {
+        Console.Clear();
+
+        times = times == 0 ? 1 : times;
+        for (var i = 0; i < times; i++)
+        {
+            var orderId = Guid.CreateVersion7();
+            var total = request.Total;
+            await eventBus.PublishAsync(new OrderCreateEvent(orderId, total));
+        }
+        return Accepted(new { orderId = Guid.CreateVersion7().ToString(), total = request.Total });
     }
 }
 

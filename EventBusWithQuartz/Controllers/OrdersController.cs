@@ -14,7 +14,7 @@ public class OrdersController(IEventBus eventBus) : ControllerBase
         // To Call the same api for 1000 times with one command
         // for /l %i in (1,1,10000) do curl -X POST "http://localhost:5000/api/orders" -H "accept: */*" -H "Content-Type: application/json" -d "{\"total\": 0}"
         Console.Clear();
-        var orderId = Guid.NewGuid();
+        var orderId = Guid.CreateVersion7();
         var total = request.Total;
         await eventBus.PublishAsync(new OrderCreatedEvent(orderId, total));
         return Accepted(new { orderId, total });

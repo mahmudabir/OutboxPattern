@@ -1,4 +1,4 @@
-namespace OutboxPattern;
+namespace OutboxPattern.Models;
 
 public class WeatherForecast
 {

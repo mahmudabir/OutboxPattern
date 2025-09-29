@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using OutboxPattern.Models;
 
 namespace OutboxPattern.Controllers;
 

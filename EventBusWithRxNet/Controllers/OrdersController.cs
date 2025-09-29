@@ -18,7 +18,7 @@ namespace EventBusWithRxNet.Controllers
         public IActionResult PlaceOrder([FromBody] PlaceOrderRequest request)
         {
             // ... business logic for placing order ...
-            var orderId = Guid.NewGuid().ToString();
+            var orderId = Guid.CreateVersion7().ToString();
             _eventBus.Publish(new OrderPlacedEvent { OrderId = orderId, UserId = request.UserId });
             return Accepted(new { OrderId = orderId });
         }

@@ -51,7 +51,7 @@ public class QuartzEventBus : IEventBus
             var handlerType = h.GetType();
             var handlerKey = HandlerKeyCache.Get(handlerType);
 
-            var jobKey = new JobKey($"evt-{typeof(TEvent).Name}-{handlerKey}-{Guid.NewGuid():N}", "events");
+            var jobKey = new JobKey($"evt-{typeof(TEvent).Name}-{handlerKey}-{Guid.CreateVersion7():N}", "events");
             var jobData = new JobDataMap
             {
                 [EventDispatchJob<TEvent>.PayloadKey] = payload,
@@ -166,7 +166,7 @@ public class EventDispatchJob<TEvent> : IJob where TEvent : class, IIntegrationE
         var nextRetry = currentRetry + 1;
         var delay = RetryDelaysSeconds[currentRetry];
 
-        var jobKey = new JobKey($"evt-retry-{typeof(TEvent).Name}-{handlerKey}-{Guid.NewGuid():N}", "events");
+        var jobKey = new JobKey($"evt-retry-{typeof(TEvent).Name}-{handlerKey}-{Guid.CreateVersion7():N}", "events");
         var jobData = new JobDataMap
         {
             [PayloadKey] = payload,

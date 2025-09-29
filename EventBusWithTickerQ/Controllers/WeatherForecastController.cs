@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace EventBusWithTicketQ.Controllers
+namespace EventBusWithTickerQ.Controllers
 {
     [ApiController]
     [Route("[controller]")]

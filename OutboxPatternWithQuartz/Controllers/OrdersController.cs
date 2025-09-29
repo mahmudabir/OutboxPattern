@@ -17,7 +17,7 @@ public class OrdersController(AppDbContext db) : ControllerBase
     public async Task<IActionResult> CreateOrder([FromBody] Order order)
     {
         Console.Clear();
-        order.Id = Guid.NewGuid();
+        order.Id = Guid.CreateVersion7();
         order.CreatedAt = DateTime.UtcNow;
         order.Shipped = false;
         order.ShippedAt = null;
@@ -40,14 +40,14 @@ public class OrdersController(AppDbContext db) : ControllerBase
         _db.OutboxMessages.AddRange([
             new OutboxMessage
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 Type = "OrderCreated",
                 Content = JsonSerializer.Serialize(orderCreatedEvent),
                 OccurredOn = DateTime.UtcNow
             },
             new OutboxMessage
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 Type = "MailSend",
                 Content = JsonSerializer.Serialize(mailSendEvent),
                 OccurredOn = DateTime.UtcNow
@@ -88,21 +88,21 @@ public class OrdersController(AppDbContext db) : ControllerBase
         _db.OutboxMessages.AddRange([
             new OutboxMessage
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 Type = "OrderShipped",
                 Content = JsonSerializer.Serialize(orderShippedEvent),
                 OccurredOn = DateTime.UtcNow
             },
             new OutboxMessage
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 Type = "MailSend",
                 Content = JsonSerializer.Serialize(mailSendEvent),
                 OccurredOn = DateTime.UtcNow
             },
             new OutboxMessage
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 Type = "InventoryUpdate",
                 Content = JsonSerializer.Serialize(inventoryUpdateEvent),
                 OccurredOn = DateTime.UtcNow

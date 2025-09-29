@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TickerQ.EntityFrameworkCore.Configurations;
 
-namespace EventBusWithQuartz.DataAccess
+namespace EventBusWithTickerQ.DataAccess
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : DbContext(options)

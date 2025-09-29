@@ -22,7 +22,7 @@ public sealed class ProductsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
     {
         // Persist product in DB here (omitted). Then publish domain event
-        var productId = Guid.NewGuid();
+        var productId = Guid.CreateVersion7();
         //await Task.Delay(3000);
         _logger.LogInformation("[Product] Created Product {ProductId}", productId);
         

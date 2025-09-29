@@ -1,57 +1,74 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using EventBusWithTickerQ.Abstractions;
-using TickerQ;
+using TickerQ.Utilities;
+using TickerQ.Utilities.Base;
+using TickerQ.Utilities.Enums;
+using TickerQ.Utilities.Interfaces.Managers;
+using TickerQ.Utilities.Models;
+using TickerQ.Utilities.Models.Ticker;
 
 namespace EventBusWithTickerQ.Infrastructure;
 
-public class TickerQEventBus : IEventBus
+public class TickerQEventBus(
+    ITimeTickerManager<TimeTicker> timeTickerManager,
+    IServiceProvider serviceProvider,
+    ILogger<TickerQEventBus> logger) : IEventBus
 {
-    private readonly ITickerQClient _tickerQClient;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<TickerQEventBus> _logger;
-
-    public TickerQEventBus(
-        ITickerQClient tickerQClient,
-        IServiceProvider serviceProvider,
-        ILogger<TickerQEventBus> logger)
-    {
-        _tickerQClient = tickerQClient;
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
-
-    public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default)
+    public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default)
         where TEvent : class, IIntegrationEvent
     {
         if (@event is null)
         {
-            _logger.LogWarning("[EventBus] Ignored null event of type {EventType}", typeof(TEvent).Name);
-            return Task.CompletedTask;
+            logger.LogWarning("[EventBus] Ignored null event of type {EventType}", typeof(TEvent).Name);
+            return;
         }
 
-        var publishedAt = DateTime.UtcNow;
-        _logger.LogInformation("[EventBus] Publishing {EventType} at {PublishedAt:o}", typeof(TEvent).Name, publishedAt);
+        // Register the event type for deserialization if not already registered
+        EventTypeRegistry.Register<TEvent>();
 
-        using var scope = _serviceProvider.CreateScope();
+        var publishedAt = DateTime.UtcNow;
+        logger.LogInformation("[EventBus] Publishing {EventType} at {PublishedAt:o}", typeof(TEvent).Name, publishedAt);
+
+        using var scope = serviceProvider.CreateScope();
         var handlerInstances = scope.ServiceProvider.GetServices<IIntegrationEventHandler<TEvent>>().ToArray();
 
         if (handlerInstances.Length == 0)
         {
-            _logger.LogWarning("[EventBus] No handlers registered for {EventType}", typeof(TEvent).Name);
-            return Task.CompletedTask;
+            logger.LogWarning("[EventBus] No handlers registered for {EventType}", typeof(TEvent).Name);
+            return;
         }
 
         foreach (var handler in handlerInstances)
         {
             var handlerType = handler.GetType();
             var handlerKey = HandlerKeyCache.Get(handlerType);
-            _tickerQClient.Enqueue<EventDispatchJob>(job => job.DispatchSingleAsync(@event, handlerKey, publishedAt, default));
-            _logger.LogDebug("[EventBus] Enqueued TickerQ job for {EventType} -> handler {Handler} ({Key})", typeof(TEvent).Name, handlerType.Name, handlerKey);
+
+            var jobData = new EventDispatchJobData
+            {
+                EventJson = JsonSerializer.Serialize(@event),
+                EventTypeName = typeof(TEvent).Name,
+                EventTypeAssemblyQualifiedName = typeof(TEvent).AssemblyQualifiedName!,
+                HandlerKey = handlerKey,
+                PublishedAt = publishedAt
+            };
+
+            await timeTickerManager.AddAsync(new TimeTicker
+            {
+                Request = TickerHelper.CreateTickerRequest(jobData),
+                ExecutionTime = DateTime.Now.AddSeconds(2),
+                Function = "DispatchSingleAsync",
+                Description = $"Dispatch {typeof(TEvent).Name} to {handlerType.Name}",
+                Retries = 3,
+                RetryIntervals = [5, 15, 30] // set in seconds
+            });
+
+            logger.LogDebug("[EventBus] Enqueued TickerQ job for {EventType} -> handler {Handler} ({Key})", typeof(TEvent).Name, handlerType.Name, handlerKey);
         }
 
-        return Task.CompletedTask;
+        return;
     }
 }
 
@@ -66,49 +83,74 @@ public class EventDispatchJob
         _logger = logger;
     }
 
-    public async Task DispatchSingleAsync<TEvent>(TEvent @event, string handlerKey, DateTime publishedAt, object? cancellationToken)
-        where TEvent : class, IIntegrationEvent
+    [TickerFunction("DispatchSingleAsync", TickerTaskPriority.High)]
+    public async Task DispatchSingleAsync(TickerFunctionContext<EventDispatchJobData> tickerContext, CancellationToken cancellationToken)
     {
         var startedAt = DateTime.UtcNow;
-        var delayMs = (startedAt - publishedAt).TotalMilliseconds;
-        _logger.LogInformation("[EventDispatchJob] Start handler dispatch {EventType} -> key {HandlerKey} at {StartedAt:o} (delay {DelayMs}ms)", typeof(TEvent).Name, handlerKey, startedAt, delayMs);
+        var delayMs = (startedAt - tickerContext.Request.PublishedAt).TotalMilliseconds;
+        var eventTypeName = tickerContext.Request.EventTypeName;
+        
+        _logger.LogInformation("[EventDispatchJob] Start handler dispatch {EventType} -> key {HandlerKey} at {StartedAt:o} (delay {DelayMs}ms)", 
+            eventTypeName, tickerContext.Request.HandlerKey, startedAt, delayMs);
 
         using var scope = _serviceProvider.CreateScope();
 
         try
         {
-            var handlers = scope.ServiceProvider.GetServices<IIntegrationEventHandler<TEvent>>();
-            IIntegrationEventHandler<TEvent>? target = null;
-            Type? targetType = null;
-            foreach (var h in handlers)
+            // Use the event type registry to deserialize without reflection
+            var deserializedEvent = EventTypeRegistry.Deserialize(
+                tickerContext.Request.EventTypeName, 
+                tickerContext.Request.EventJson);
+
+            if (deserializedEvent == null)
             {
-                var t = h.GetType();
-                if (HandlerKeyCache.Get(t) == handlerKey)
+                _logger.LogError("[EventDispatchJob] Could not deserialize event type {EventType}", eventTypeName);
+                return;
+            }
+
+            // Get all handlers using the non-generic interface
+            var allHandlers = scope.ServiceProvider.GetServices<IIntegrationEventHandler>();
+            
+            IIntegrationEventHandler? targetHandler = null;
+            Type? targetType = null;
+            
+            foreach (var handler in allHandlers)
+            {
+                var handlerType = handler.GetType();
+                if (HandlerKeyCache.Get(handlerType) == tickerContext.Request.HandlerKey)
                 {
-                    target = h;
-                    targetType = t;
+                    targetHandler = handler;
+                    targetType = handlerType;
                     break;
                 }
             }
 
-            if (target is null)
+            if (targetHandler is null)
             {
-                _logger.LogError("[EventDispatchJob] No registered handler matching key {HandlerKey} for {EventType}", handlerKey, typeof(TEvent).Name);
+                _logger.LogError("[EventDispatchJob] No registered handler matching key {HandlerKey} for {EventType}", 
+                    tickerContext.Request.HandlerKey, eventTypeName);
                 return;
             }
 
-            _logger.LogDebug("[EventDispatchJob] Invoking handler {Handler} ({Key}) for {EventType}", targetType!.Name, handlerKey, typeof(TEvent).Name);
-            await target.HandleAsync(@event, CancellationToken.None);
-            _logger.LogInformation("[EventDispatchJob] Completed handler {Handler} ({Key}) for {EventType} (delay {DelayMs}ms)", targetType.Name, handlerKey, typeof(TEvent).Name, delayMs);
+            _logger.LogDebug("[EventDispatchJob] Invoking handler {Handler} ({Key}) for {EventType}", 
+                targetType!.Name, tickerContext.Request.HandlerKey, eventTypeName);
+
+            // Use the non-generic HandleAsync method with the properly deserialized event
+            await targetHandler.HandleAsync(deserializedEvent, cancellationToken);
+
+            _logger.LogInformation("[EventDispatchJob] Completed handler {Handler} ({Key}) for {EventType} (delay {DelayMs}ms)", 
+                targetType.Name, tickerContext.Request.HandlerKey, eventTypeName, delayMs);
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("[EventDispatchJob] Canceled handler key {HandlerKey} for {EventType}", handlerKey, typeof(TEvent).Name);
+            _logger.LogWarning("[EventDispatchJob] Canceled handler key {HandlerKey} for {EventType}", 
+                tickerContext.Request.HandlerKey, eventTypeName);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[EventDispatchJob] Handler key {HandlerKey} failed for {EventType}", handlerKey, typeof(TEvent).Name);
+            _logger.LogError(ex, "[EventDispatchJob] Handler key {HandlerKey} failed for {EventType}", 
+                tickerContext.Request.HandlerKey, eventTypeName);
             throw;
         }
     }
@@ -127,4 +169,31 @@ internal static class HandlerKeyCache
         var hash = SHA256.HashData(bytes);
         return Convert.ToHexString(hash.AsSpan(0, 6));
     }
+}
+
+internal static class EventTypeRegistry
+{
+    private static readonly ConcurrentDictionary<string, Func<string, object?>> _deserializers = new();
+
+    public static void Register<TEvent>() where TEvent : class, IIntegrationEvent
+    {
+        var eventTypeName = typeof(TEvent).Name;
+        _deserializers.TryAdd(eventTypeName, json => JsonSerializer.Deserialize<TEvent>(json));
+    }
+
+    public static object? Deserialize(string eventTypeName, string json)
+    {
+        return _deserializers.TryGetValue(eventTypeName, out var deserializer) 
+            ? deserializer(json) 
+            : null;
+    }
+}
+
+public class EventDispatchJobData
+{
+    public required string EventJson { get; set; }
+    public required string EventTypeName { get; set; }
+    public required string EventTypeAssemblyQualifiedName { get; set; }
+    public required string HandlerKey { get; set; }
+    public DateTime PublishedAt { get; set; }
 }

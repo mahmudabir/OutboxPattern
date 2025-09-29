@@ -1,12 +1,15 @@
-using EventBusWithQuartz.DataAccess;
 using EventBusWithTickerQ.Abstractions;
-using EventBusWithTickerQ.EventHandlers;
+using EventBusWithTickerQ.DataAccess;
+using EventBusWithTickerQ.EventHandlers.Created;
+using EventBusWithTickerQ.EventHandlers.Updated;
 using EventBusWithTickerQ.Events;
 using EventBusWithTickerQ.Infrastructure;
 using EventBusWithTickerQ.Services;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+
 using TickerQ;
 using TickerQ.Dashboard.DependencyInjection;
 using TickerQ.DependencyInjection;
@@ -29,9 +32,6 @@ namespace EventBusWithTickerQ
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
 
-            // Register TickerQ client (replace with actual implementation)
-            builder.Services.AddSingleton<ITickerQClient, TickerQClient>();
-
             var tickerQConnection = builder.Configuration.GetConnectionString("TickerQ");
 
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(tickerQConnection));
@@ -48,7 +48,7 @@ namespace EventBusWithTickerQ
                 // Set the max thread concurrency for Ticker (default: Environment.ProcessorCount).
                 opt.SetMaxConcurrency(maxConcurrency: Convert.ToInt32(builder.Configuration["TickerQ:MaxConcurrency"] ?? "100"));
 
-                // Configure the EF Core–backed operational store for TickerQ metadata, locks, and state.
+                // Configure the EF Coreï¿½backed operational store for TickerQ metadata, locks, and state.
                 opt.AddOperationalStore<ApplicationDbContext>(efOpt =>
                 {
                     // Apply custom model configuration only during EF Core migrations
@@ -70,7 +70,7 @@ namespace EventBusWithTickerQ
                         {
                             await timeTicker.AddAsync(new TimeTicker
                             {
-                                Id = Guid.NewGuid(),
+                                Id = Guid.CreateVersion7(),
                                 Function = "CleanupLogs",
                                 ExecutionTime = DateTime.UtcNow.AddSeconds(5),
                             });
@@ -79,7 +79,7 @@ namespace EventBusWithTickerQ
                         {
                             await cronTicker.AddAsync(new CronTicker
                             {
-                                Id = Guid.NewGuid(),
+                                Id = Guid.CreateVersion7(),
                                 Expression = "0 0 * * *", // every day at 00:00 UTC
                                 Function = "CleanupLogs"
                             });
@@ -99,7 +99,7 @@ namespace EventBusWithTickerQ
                     //dbopt.BackendDomain = "ssl:arcenox.com";
 
                     // Authentication
-                    dbopt.EnableBuiltInAuth = true;  // Use TickerQ’s built-in auth (default).
+                    dbopt.EnableBuiltInAuth = true;  // Use TickerQï¿½s built-in auth (default).
                     dbopt.UseHostAuthentication = false; // Use host auth instead (off by default).
                     dbopt.RequiredRoles = new[] { "Admin", "Ops" };
                     dbopt.RequiredPolicies = new[] { "TickerQDashboardAccess" };
@@ -119,8 +119,16 @@ namespace EventBusWithTickerQ
 
             builder.Services.AddScoped<IEventBus, TickerQEventBus>();
             builder.Services.AddScoped<EventDispatchJob>();
-            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreatedEvent>, SendEmailOnOrderCreatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreatedEvent>, UpdateReadModelOnOrderCreatedHandler>();
+            
+            // Register handlers with both generic and non-generic interfaces
+            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreateEvent>, SendEmailOnOrderCreatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreateEvent>, UpdateReadModelOnOrderCreatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler<OrderUpdateEvent>, SendEmailOnOrderUpdatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler<OrderUpdateEvent>, UpdateReadModelOnOrderUpdatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler, SendEmailOnOrderCreatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler, UpdateReadModelOnOrderCreatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler, SendEmailOnOrderUpdatedHandler>();
+            builder.Services.AddScoped<IIntegrationEventHandler, UpdateReadModelOnOrderUpdatedHandler>();
 
             var app = builder.Build();
 
