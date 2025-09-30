@@ -4,7 +4,7 @@ using EventBusWithTickerQ.Events;
 
 namespace EventBusWithTickerQ.EventHandlers.Updated;
 
-public sealed class UpdateReadModelOnOrderUpdatedHandler : IIntegrationEventHandler<OrderUpdateEvent>
+public sealed class UpdateReadModelOnOrderUpdatedHandler : IEventHandler<OrderUpdateEvent>
 {
     private readonly ILogger<UpdateReadModelOnOrderCreatedHandler> _logger;
 
@@ -17,15 +17,5 @@ public sealed class UpdateReadModelOnOrderUpdatedHandler : IIntegrationEventHand
     {
         _logger.LogInformation("[ReadModel] Updated projections for {OrderId}", @event.OrderId);
         return Task.CompletedTask;
-    }
-
-    public Task HandleAsync(object @event, CancellationToken cancellationToken = default)
-    {
-        if (@event is OrderUpdateEvent orderCreatedEvent)
-        {
-            return HandleAsync(orderCreatedEvent, cancellationToken);
-        }
-        
-        throw new ArgumentException($"Cannot handle event of type {@event?.GetType().Name ?? "null"}", nameof(@event));
     }
 }

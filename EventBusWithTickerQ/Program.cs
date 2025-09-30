@@ -117,18 +117,20 @@ namespace EventBusWithTickerQ
             builder.Services.AddScoped<MyBackgroundService>();
             builder.Services.AddScoped<MyFirstExample>();
 
-            builder.Services.AddScoped<IEventBus, TickerQEventBus>();
-            builder.Services.AddScoped<EventDispatchJob>();
+            builder.Services.AddEventBus();
+
+            //builder.Services.AddScoped<IEventBus, TickerQEventBus>();
+            //builder.Services.AddScoped<EventDispatchJob>();
             
-            // Register handlers with both generic and non-generic interfaces
-            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreateEvent>, SendEmailOnOrderCreatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler<OrderCreateEvent>, UpdateReadModelOnOrderCreatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler<OrderUpdateEvent>, SendEmailOnOrderUpdatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler<OrderUpdateEvent>, UpdateReadModelOnOrderUpdatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler, SendEmailOnOrderCreatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler, UpdateReadModelOnOrderCreatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler, SendEmailOnOrderUpdatedHandler>();
-            builder.Services.AddScoped<IIntegrationEventHandler, UpdateReadModelOnOrderUpdatedHandler>();
+            //// Register handlers with both generic and non-generic interfaces
+            //builder.Services.AddScoped<IEventHandler<OrderCreateEvent>, SendEmailOnOrderCreatedHandler>();
+            //builder.Services.AddScoped<IEventHandler<OrderCreateEvent>, UpdateReadModelOnOrderCreatedHandler>();
+            //builder.Services.AddScoped<IEventHandler<OrderUpdateEvent>, SendEmailOnOrderUpdatedHandler>();
+            //builder.Services.AddScoped<IEventHandler<OrderUpdateEvent>, UpdateReadModelOnOrderUpdatedHandler>();
+            //builder.Services.AddScoped<IEventHandler, SendEmailOnOrderCreatedHandler>();
+            //builder.Services.AddScoped<IEventHandler, UpdateReadModelOnOrderCreatedHandler>();
+            //builder.Services.AddScoped<IEventHandler, SendEmailOnOrderUpdatedHandler>();
+            //builder.Services.AddScoped<IEventHandler, UpdateReadModelOnOrderUpdatedHandler>();
 
             var app = builder.Build();
 
