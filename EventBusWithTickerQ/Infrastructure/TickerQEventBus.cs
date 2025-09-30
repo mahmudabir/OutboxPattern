@@ -29,7 +29,7 @@ public class TickerQEventBus(
         // Register the event type for deserialization if not already registered
         EventTypeRegistry.Register<TEvent>();
 
-        var publishedAt = DateTime.UtcNow;
+        var publishedAt = DateTimeOffset.UtcNow;
         logger.LogInformation("[EventBus] Publishing {EventType} at {PublishedAt:o}", typeof(TEvent).Name, publishedAt);
 
         using var scope = serviceProvider.CreateScope();
@@ -49,8 +49,7 @@ public class TickerQEventBus(
             var jobData = new EventDispatchJobData
             {
                 EventJson = JsonSerializer.Serialize(@event),
-                EventTypeName = typeof(TEvent).Name,
-                EventTypeAssemblyQualifiedName = typeof(TEvent).AssemblyQualifiedName!,
+                EventTypeName = typeof(TEvent).AssemblyQualifiedName!,
                 HandlerKey = handlerKey,
                 PublishedAt = publishedAt
             };
@@ -137,6 +136,7 @@ public class EventDispatchJob
 
             // Use the non-generic HandleAsync method with the properly deserialized event
             await targetHandler.HandleAsync(deserializedEvent, cancellationToken);
+            //_logger.LogWarning("[EventDispatchJob] Published at {PublishedAt}. Dispatched at {DispatchedAt} for {EventType}", tickerContext.Request.PublishedAt, DateTimeOffset.UtcNow, eventTypeName);
 
             _logger.LogInformation("[EventDispatchJob] Completed handler {Handler} ({Key}) for {EventType} (delay {DelayMs}ms)", 
                 targetType.Name, tickerContext.Request.HandlerKey, eventTypeName, delayMs);
@@ -177,7 +177,7 @@ internal static class EventTypeRegistry
 
     public static void Register<TEvent>() where TEvent : class, IIntegrationEvent
     {
-        var eventTypeName = typeof(TEvent).Name;
+        var eventTypeName = typeof(TEvent).AssemblyQualifiedName!;
         _deserializers.TryAdd(eventTypeName, json => JsonSerializer.Deserialize<TEvent>(json));
     }
 
@@ -193,7 +193,6 @@ public class EventDispatchJobData
 {
     public required string EventJson { get; set; }
     public required string EventTypeName { get; set; }
-    public required string EventTypeAssemblyQualifiedName { get; set; }
     public required string HandlerKey { get; set; }
-    public DateTime PublishedAt { get; set; }
+    public DateTimeOffset PublishedAt { get; set; }
 }

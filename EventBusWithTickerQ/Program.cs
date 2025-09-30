@@ -39,7 +39,7 @@ namespace EventBusWithTickerQ
             builder.Services.AddTickerQ(opt =>
             {
                 // Set fallback time out to check for missed jobs and execute.
-                opt.UpdateMissedJobCheckDelay(TimeSpan.FromMinutes(1));
+                opt.UpdateMissedJobCheckDelay(TimeSpan.FromSeconds(10));
                 // Set name of instance, default is Environment.MachineName.
                 opt.SetInstanceIdentifier("TickerQ");
 
